@@ -1,0 +1,12 @@
+node_modules
+.corepack
+dist
+.env
+*.db
+artifacts
+typechain-types
+cache
+.next
+*.log
+*.pid
+*.tsbuildinfo

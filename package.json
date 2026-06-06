@@ -1,0 +1,19 @@
+{
+  "name": "pactnet",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "demo:happy": "corepack pnpm --filter @pactnet/demo run demo:happy",
+    "demo:breach": "corepack pnpm --filter @pactnet/demo run demo:breach",
+    "deploy:contracts": "turbo run deploy --filter @pactnet/contracts"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

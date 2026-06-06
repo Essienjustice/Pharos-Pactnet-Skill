@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "types": ["node", "mocha", "@nomicfoundation/hardhat-toolbox"]
+  },
+  "include": ["hardhat.config.ts", "typechain-types/**/*.ts"]
+}

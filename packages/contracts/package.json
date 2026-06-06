@@ -1,0 +1,27 @@
+{
+  "name": "@pactnet/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./typechain-types": {
+      "types": "./dist/typechain-types/index.d.ts",
+      "default": "./dist/typechain-types/index.js"
+    }
+  },
+  "scripts": {
+    "build": "hardhat compile && tsc -p tsconfig.json",
+    "deploy": "hardhat run deploy/01_deploy.ts --network pharosMainnet",
+    "test": "hardhat test",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.1.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.10.2",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.4",
+    "hardhat": "^2.22.17",
+    "typechain": "^8.3.2"
+  }
+}
