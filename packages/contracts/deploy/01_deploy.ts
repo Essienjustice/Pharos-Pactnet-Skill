@@ -40,7 +40,12 @@ async function main() {
   console.log(`ReputationNFT deployed to ${addresses.reputationNFT}`);
   console.log(`PactEngine deployed to ${addresses.pactEngine}`);
 
-  const outputFile = network.name === "pharosMainnet" ? "pharos-mainnet.json" : "pharos-testnet.json";
+  const outputFileByNetwork: Record<string, string> = {
+    pharosMainnet: "pharos-mainnet.json",
+    pharosTestnet: "pharos-testnet.json",
+    pharosAtlanticTestnet: "pharos-atlantic-testnet.json"
+  };
+  const outputFile = outputFileByNetwork[network.name] ?? `${network.name}.json`;
   const outputPath = path.resolve(__dirname, `../deployments/${outputFile}`);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${JSON.stringify(addresses, null, 2)}\n`);

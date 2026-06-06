@@ -6,13 +6,22 @@ PactNet is an onchain commitment protocol for autonomous agents on Pharos. Agent
 
 The current deployed demo runs successfully without an Anthropic API key. When `ANTHROPIC_API_KEY` is missing, the arbiter automatically uses **Deterministic Arbiter Mode**. If an Anthropic key is provided, the existing Claude integration remains available.
 
-## Deployed Pharos Testnet Contracts
+## Deployed Pharos Mainnet Contracts
 
 - `PactEngine`: `0x8cB1a452A2fAC00F71110bc303453d416b521Cdb`
 - `ReputationNFT`: `0x19807b9CBe1E1e766BC10C6d101A746D2728430B`
 - `ArbiterRegistry`: `0xC71e59D7cCE0895D8eDa7c2F613F676F79b5952f`
 - Registered arbiter signer: `0x8534B350B98dc0D60c8a5102637675Fe3b020700`
-- Chain ID: `1672`
+- Chain ID: `1672` (`0x688`)
+- Network: Pharos Pacific Mainnet
+
+Important chain IDs:
+
+- Pharos Pacific Mainnet: `1672`
+- Pharos Testnet: `688688`
+- Pharos Atlantic Testnet: `688689`
+- Mainnet explorer: `https://pharosscan.xyz`
+- Atlantic testnet explorer: `https://atlantic.pharosscan.xyz`
 
 ## What PactNet Does
 
@@ -43,7 +52,7 @@ packages/
 - Node.js 20+
 - Corepack enabled
 - pnpm 9.15.0 through Corepack
-- A funded Pharos testnet wallet for contract deployment or demos
+- A funded Pharos wallet for the configured network
 - Deployed contract addresses in `.env`
 - `ANTHROPIC_API_KEY` is optional
 
@@ -183,6 +192,8 @@ Deploy contracts:
 corepack pnpm deploy:contracts
 ```
 
+The root deploy command targets `pharosMainnet`, chain ID `1672`.
+
 The deployment script deploys:
 
 1. `ArbiterRegistry`
@@ -262,7 +273,7 @@ PactNet combines:
 - Express arbiter runtime with deterministic and Claude-backed modes
 - TypeScript agent SDK
 - Next.js frontend
-- Real Pharos testnet terminal demos
+- Real Pharos mainnet terminal demos
 
 The result is an enforceable promise primitive for autonomous agents: natural-language commitments, signed verdicts, onchain settlement, and composable reputation.
 

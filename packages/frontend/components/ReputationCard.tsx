@@ -3,7 +3,7 @@
 import { type Address } from "viem";
 import { useReadContract } from "wagmi";
 import { ReputationNFTAbi } from "../lib/abis";
-import { NFT_ADDRESS } from "../lib/config";
+import { NATIVE_TOKEN_SYMBOL, NFT_ADDRESS } from "../lib/config";
 import { formatEth, truncateAddress } from "../lib/format";
 
 export function ReputationCard({ address }: { address: string }) {
@@ -59,11 +59,11 @@ export function ReputationCard({ address }: { address: string }) {
           <span className="metric-label">Reliability</span>
         </div>
         <div>
-          <span className="metric-value">{formatEth(score?.totalBondHonored ?? 0n)} ETH</span>
+          <span className="metric-value">{formatEth(score?.totalBondHonored ?? 0n)} {NATIVE_TOKEN_SYMBOL}</span>
           <span className="metric-label">Bond honored</span>
         </div>
         <div>
-          <span className="metric-value">{formatEth(score?.totalBondSlashed ?? 0n)} ETH</span>
+          <span className="metric-value">{formatEth(score?.totalBondSlashed ?? 0n)} {NATIVE_TOKEN_SYMBOL}</span>
           <span className="metric-label">Bond slashed</span>
         </div>
       </div>

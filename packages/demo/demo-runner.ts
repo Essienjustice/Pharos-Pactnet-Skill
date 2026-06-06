@@ -16,18 +16,33 @@ const speedFactor = Number.isFinite(speed) && speed > 0 ? speed : 1;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms / speedFactor));
 
+const configuredChainId = Number(process.env.PHAROS_CHAIN_ID ?? process.env.NEXT_PUBLIC_CHAIN_ID ?? "1672");
+
 const env = {
-  rpcUrl: process.env.PHAROS_RPC_URL ?? "https://testnet.dplabs-internal.com",
+  rpcUrl: process.env.PHAROS_RPC_URL ?? process.env.NEXT_PUBLIC_PHAROS_RPC_URL ?? "https://rpc.pharos.xyz",
   pactEngine: process.env.PACT_ENGINE_ADDRESS ?? process.env.NEXT_PUBLIC_PACT_ENGINE_ADDRESS ?? "0x0000000000000000000000000000000000000000",
   reputationNft: process.env.REPUTATION_NFT_ADDRESS ?? "0x0000000000000000000000000000000000000000",
   arbiterRegistry: process.env.ARBITER_REGISTRY_ADDRESS ?? "0x0000000000000000000000000000000000000000",
   arbiterPublicKey: process.env.ARBITER_PUBLIC_KEY ?? "0x0000000000000000000000000000000000000000",
   arbiterUrl: process.env.NEXT_PUBLIC_ARBITER_URL ?? process.env.ARBITER_URL ?? "http://localhost:3001",
+  chainId: Number.isFinite(configuredChainId) ? configuredChainId : 1672,
   agentAKey: process.env.DEMO_AGENT_A_KEY ?? demoWallets.agentA.privateKey,
   agentBKey: process.env.DEMO_AGENT_B_KEY ?? demoWallets.agentB.privateKey
 };
 
-const explorerTx = (txHash: string) => `https://testnet.pharosscan.xyz/tx/${txHash}`;
+const explorerBaseUrl = (chainId: number) => {
+  if (chainId === 688689) {
+    return "https://atlantic.pharosscan.xyz";
+  }
+
+  if (chainId === 688688) {
+    return "https://testnet.pharosscan.xyz";
+  }
+
+  return "https://pharosscan.xyz";
+};
+
+const explorerTx = (txHash: string) => `${explorerBaseUrl(env.chainId)}/tx/${txHash}`;
 
 const line = () => console.log(chalk.gray("─".repeat(78)));
 
@@ -113,6 +128,7 @@ async function main() {
   console.log(`${chalk.bold("PactEngine:")}       ${env.pactEngine}`);
   console.log(`${chalk.bold("ReputationNFT:")}    ${env.reputationNft}`);
   console.log(`${chalk.bold("ArbiterRegistry:")}  ${env.arbiterRegistry}`);
+  console.log(`${chalk.bold("Chain ID:")}          ${env.chainId}`);
   console.log(`${chalk.bold("Arbiter public key:")} ${env.arbiterPublicKey}`);
   console.log(`${chalk.bold("Agent A:")}          ${agentAWallet.address}`);
   console.log(`${chalk.bold("Agent B:")}          ${agentBWallet.address}`);
@@ -176,8 +192,8 @@ async function main() {
   await delay(7000);
 
   console.log(chalk.bold("\n[0:40] PHASE 5: AI Arbiter evaluates"));
-  console.log("Sending to Claude claude-sonnet-4-20250514...");
-  await spinner("Claude evaluating evidence...", 4500);
+  console.log(process.env.ANTHROPIC_API_KEY ? "Sending to Claude claude-sonnet-4-20250514..." : "Using Deterministic Arbiter Mode...");
+  await spinner(process.env.ANTHROPIC_API_KEY ? "Claude evaluating evidence..." : "Deterministic arbiter evaluating evidence...", 4500);
   let happyVerdict: ArbiterVerdict;
   try {
     happyVerdict = await pactClient.submitEvidence(happyPact.pactId, [happyEvidence]);
@@ -195,8 +211,8 @@ async function main() {
   await delay(10000);
 
   console.log(chalk.bold("\n[0:50] PHASE 6: Bond released, reputation updated"));
-  console.log(`${chalk.gray("AgentA balance before:")} 10.0000 PHRS`);
-  console.log(`${chalk.green("AgentA balance after:")}  10.0100 PHRS`);
+  console.log(`${chalk.gray("AgentA balance before:")} 10.0000 native token`);
+  console.log(`${chalk.green("AgentA balance after:")}  10.0100 native token`);
   console.log(`${chalk.green("✓")} ReputationNFT: fulfilled 0 → 1, breached 0 → 0`);
   await delay(10000);
 

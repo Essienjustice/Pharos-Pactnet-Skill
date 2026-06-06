@@ -1,5 +1,7 @@
 /**
- * These wallets are funded on Pharos testnet for demo only. Never use for real funds.
+ * These placeholder wallets are for local fallback wiring only.
+ * Use funded demo wallets from .env for live Pharos demos.
+ * Never use these keys for real funds.
  */
 export const demoWallets = {
   agentA: {

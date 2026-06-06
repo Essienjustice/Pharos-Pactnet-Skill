@@ -5,7 +5,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { decodeEventLog, isAddress, parseEther, toHex, type Address } from "viem";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { PactEngineAbi } from "../../lib/abis";
-import { ARBITER_URL, ENGINE_ADDRESS } from "../../lib/config";
+import { ARBITER_URL, ENGINE_ADDRESS, NATIVE_TOKEN_SYMBOL } from "../../lib/config";
 
 type ParsedCommitment = {
   action: string;
@@ -56,7 +56,7 @@ export default function CreatePactPage() {
     }
 
     if (parsedCommitment && Number(bondEth) <= 0) {
-      return "Bond must be greater than 0 ETH.";
+      return `Bond must be greater than 0 ${NATIVE_TOKEN_SYMBOL}.`;
     }
 
     if (parsedCommitment && Number(deadlineHours) <= 0) {
@@ -221,7 +221,7 @@ export default function CreatePactPage() {
               <input value={agentB} onChange={(event) => setAgentB(event.target.value)} placeholder="0x..." />
             </label>
             <label className="field">
-              <span>Bond ETH</span>
+              <span>Bond {NATIVE_TOKEN_SYMBOL}</span>
               <input type="number" min="0.001" step="0.001" value={bondEth} onChange={(event) => setBondEth(event.target.value)} />
             </label>
             <label className="field">

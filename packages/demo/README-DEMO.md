@@ -1,12 +1,14 @@
 # PactNet Live Demo
 
-This folder contains the terminal scripts used for the PactNet live demo on Pharos testnet.
+This folder contains the terminal scripts used for the PactNet live demo on Pharos.
+
+The deployed addresses in this repository are on **Pharos Pacific Mainnet**, chain ID `1672`.
 
 The default judging path does **not** require an Anthropic API key. If `ANTHROPIC_API_KEY` is missing or empty, the arbiter uses **Deterministic Arbiter Mode**. Claude mode remains available when an Anthropic key is provided.
 
 ## Prerequisites
 
-- Funded demo wallets for Agent A and Agent B on Pharos testnet.
+- Funded demo wallets for Agent A and Agent B on the configured Pharos network.
 - Arbiter service running on `http://localhost:3001`.
 - Deployed contract addresses in `.env`:
   - `PACT_ENGINE_ADDRESS`
@@ -26,6 +28,14 @@ Optional:
 
 - `ANTHROPIC_API_KEY`
 - `DEMO_SPEED`
+
+## Chain IDs
+
+- Pharos Pacific Mainnet: `1672`
+- Pharos Testnet: `688688`
+- Pharos Atlantic Testnet: `688689`
+- Mainnet explorer: `https://pharosscan.xyz`
+- Atlantic testnet explorer: `https://atlantic.pharosscan.xyz`
 
 ## Start The Arbiter
 
@@ -114,6 +124,8 @@ The short `demo:happy` and `demo:breach` commands are recommended for judging be
 - `ReputationNFT`: `0x19807b9CBe1E1e766BC10C6d101A746D2728430B`
 - `ArbiterRegistry`: `0xC71e59D7cCE0895D8eDa7c2F613F676F79b5952f`
 - Registered arbiter signer: `0x8534B350B98dc0D60c8a5102637675Fe3b020700`
+- Network: Pharos Pacific Mainnet
+- Chain ID: `1672`
 
 ## Troubleshooting
 
@@ -132,7 +144,7 @@ If a transaction fails:
 
 - Confirm `DEMO_AGENT_A_KEY` is funded.
 - Confirm `DEMO_AGENT_A_KEY` and `DEMO_AGENT_B_KEY` are different wallets.
-- Confirm `PACT_ENGINE_ADDRESS` is the deployed Pharos testnet contract.
+- Confirm `PACT_ENGINE_ADDRESS` is deployed on the same Pharos network as `PHAROS_RPC_URL`.
 - Confirm the arbiter health endpoint reports `chainConnected: true`.
 
 If deterministic mode is expected but Claude is mentioned in logs, confirm the shell has:

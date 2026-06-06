@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NATIVE_TOKEN_SYMBOL } from "../lib/config";
 import { formatEth, formatTimestamp, truncateAddress } from "../lib/format";
 
 export type PactState = "Pending" | "Active" | "Fulfilled" | "Breached" | "Disputed";
@@ -38,7 +39,7 @@ export function PactStatusRow({ id, status }: { id: string; status: PactStatusRe
       <span>#{id}</span>
       <span className={`badge ${pact?.state ?? "Pending"}`}>{pact?.state ?? "Missing"}</span>
       <span>{truncateAddress(agentA)} to {truncateAddress(agentB)}</span>
-      <span>{formatEth(pact?.bond ?? pact?.stakeWei ?? "0")} ETH</span>
+      <span>{formatEth(pact?.bond ?? pact?.stakeWei ?? "0")} {NATIVE_TOKEN_SYMBOL}</span>
       <span>{pact?.deadline ? formatTimestamp(pact.deadline) : "No deadline"}</span>
     </Link>
   );

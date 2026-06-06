@@ -7,7 +7,7 @@ import { useReadContract } from "wagmi";
 import { ReputationCard } from "../../../components/ReputationCard";
 import type { PactStatusResponse } from "../../../components/PactStatusRow";
 import { PactEngineAbi } from "../../../lib/abis";
-import { ARBITER_URL, ENGINE_ADDRESS } from "../../../lib/config";
+import { ARBITER_URL, ENGINE_ADDRESS, NATIVE_TOKEN_SYMBOL } from "../../../lib/config";
 import { formatEth, formatTimestamp, truncateAddress } from "../../../lib/format";
 
 async function fetchPactStatus(id: string): Promise<PactStatusResponse> {
@@ -106,7 +106,7 @@ export default function AgentPage({ params }: { params: { address: string } }) {
                       <td>
                         <span className={`badge ${pact?.state ?? "Pending"}`}>{pact?.state ?? "Missing"}</span>
                       </td>
-                      <td>{formatEth(pact?.bond ?? pact?.stakeWei ?? "0")} ETH</td>
+                      <td>{formatEth(pact?.bond ?? pact?.stakeWei ?? "0")} {NATIVE_TOKEN_SYMBOL}</td>
                       <td>{pact?.deadline ? formatTimestamp(pact.deadline) : "No deadline"}</td>
                     </tr>
                   );

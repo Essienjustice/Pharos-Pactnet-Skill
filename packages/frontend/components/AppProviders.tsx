@@ -5,15 +5,31 @@ import { type ReactNode, useState } from "react";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { defineChain } from "viem";
-import { CHAIN_ID, PHAROS_RPC_URL } from "../lib/config";
+import { CHAIN_ID, NATIVE_TOKEN_SYMBOL, PHAROS_RPC_URL } from "../lib/config";
 
-const pharosTestnet = defineChain({
+const getPharosChainName = (chainId: number) => {
+  if (chainId === 1672) {
+    return "Pharos Pacific Mainnet";
+  }
+
+  if (chainId === 688688) {
+    return "Pharos Testnet";
+  }
+
+  if (chainId === 688689) {
+    return "Pharos Atlantic Testnet";
+  }
+
+  return "Pharos";
+};
+
+const pharosChain = defineChain({
   id: CHAIN_ID,
-  name: "Pharos Testnet",
+  name: getPharosChainName(CHAIN_ID),
   nativeCurrency: {
     decimals: 18,
     name: "Pharos",
-    symbol: "PHRS"
+    symbol: NATIVE_TOKEN_SYMBOL
   },
   rpcUrls: {
     default: {
@@ -23,10 +39,10 @@ const pharosTestnet = defineChain({
 });
 
 const wagmiConfig = createConfig({
-  chains: [pharosTestnet],
+  chains: [pharosChain],
   connectors: [injected()],
   transports: {
-    [pharosTestnet.id]: http(PHAROS_RPC_URL)
+    [pharosChain.id]: http(PHAROS_RPC_URL)
   },
   ssr: true
 });

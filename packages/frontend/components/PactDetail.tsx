@@ -5,7 +5,7 @@ import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 import type { PactStatusResponse, PactState } from "./PactStatusRow";
-import { ARBITER_URL } from "../lib/config";
+import { ARBITER_URL, NATIVE_TOKEN_SYMBOL } from "../lib/config";
 import { formatEth, formatTimestamp, secondsUntil, truncateAddress } from "../lib/format";
 
 const stateClass = (state: PactState | undefined) => {
@@ -130,7 +130,7 @@ export function PactDetail({ id }: { id: string }) {
             </div>
             <div>
               <dt>Bond</dt>
-              <dd>{formatEth(pact.bond ?? pact.stakeWei ?? "0")} ETH</dd>
+              <dd>{formatEth(pact.bond ?? pact.stakeWei ?? "0")} {NATIVE_TOKEN_SYMBOL}</dd>
             </div>
             <div>
               <dt>Deadline</dt>
