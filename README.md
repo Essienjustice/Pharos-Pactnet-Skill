@@ -373,4 +373,4 @@ This is not a hackathon project that will be archived on Monday. It is the first
 
 ---
 
-*Built for Pharos · Powered by Claude*
+*Built for Pharos ·*
