@@ -1,86 +1,142 @@
 # PactNet Live Demo
 
-This folder contains the scripts for a polished 5-minute PactNet demo on Pharos testnet.
+This folder contains the terminal scripts used for the PactNet live demo on Pharos testnet.
+
+The default judging path does **not** require an Anthropic API key. If `ANTHROPIC_API_KEY` is missing or empty, the arbiter uses **Deterministic Arbiter Mode**. Claude mode remains available when an Anthropic key is provided.
 
 ## Prerequisites
 
 - Funded demo wallets for Agent A and Agent B on Pharos testnet.
-- Deployed contracts:
+- Arbiter service running on `http://localhost:3001`.
+- Deployed contract addresses in `.env`:
   - `PACT_ENGINE_ADDRESS`
   - `REPUTATION_NFT_ADDRESS`
   - `ARBITER_REGISTRY_ADDRESS`
-- Arbiter service running and reachable from `NEXT_PUBLIC_ARBITER_URL` or `ARBITER_URL`.
-- `.env` populated with:
-  - `PHAROS_RPC_URL`
+- Demo wallet keys in `.env`:
   - `DEMO_AGENT_A_KEY`
   - `DEMO_AGENT_B_KEY`
+- Arbiter signing configuration:
+  - `ARBITER_PRIVATE_KEY`
   - `ARBITER_PUBLIC_KEY`
-  - `PACT_ENGINE_ADDRESS`
-  - `REPUTATION_NFT_ADDRESS`
-  - `ARBITER_REGISTRY_ADDRESS`
+- Pharos RPC configuration:
+  - `PHAROS_RPC_URL`
+  - `PHAROS_CHAIN_ID`
 
-## Commands
+Optional:
 
-Install dependencies from the repo root:
+- `ANTHROPIC_API_KEY`
+- `DEMO_SPEED`
 
-```sh
-pnpm install
+## Start The Arbiter
+
+From the repo root:
+
+```powershell
+cd "C:\Users\USER\Desktop\5th Skill"
+$env:COREPACK_HOME = Join-Path (Get-Location) ".corepack"
+$env:ANTHROPIC_API_KEY = ""
+corepack pnpm --filter @pactnet/arbiter run build
+node packages/arbiter/dist/index.js
 ```
 
-Run the full live demo:
+Check health:
 
-```sh
-pnpm --filter @pactnet/demo demo:live
+```powershell
+Invoke-RestMethod http://localhost:3001/health
 ```
 
-Run at 2x speed:
+Expected:
 
-```sh
-DEMO_SPEED=2 pnpm --filter @pactnet/demo demo:live
+```text
+ok: true
+chainConnected: true
+arbiterMode: Deterministic Arbiter Mode
 ```
 
-Run the SDK happy-path script:
+## Run The Short Happy-Path Demo
 
-```sh
-pnpm --filter @pactnet/demo demo:happy
+In a second PowerShell window:
+
+```powershell
+cd "C:\Users\USER\Desktop\5th Skill"
+$env:COREPACK_HOME = Join-Path (Get-Location) ".corepack"
+$env:ANTHROPIC_API_KEY = ""
+corepack pnpm demo:happy
 ```
 
-Run the SDK breach-path script:
+What judges see:
 
-```sh
-pnpm --filter @pactnet/demo demo:breach
+- Agent A creates a real pact on Pharos.
+- Agent B watches state transitions.
+- Agent A submits fibonacci evidence.
+- Deterministic Arbiter Mode returns a fulfilled verdict.
+- `PactEngine` settles the pact.
+- Final table shows `Fulfilled`, confidence, and bond outcome.
+
+## Run The Breach Demo
+
+```powershell
+cd "C:\Users\USER\Desktop\5th Skill"
+$env:COREPACK_HOME = Join-Path (Get-Location) ".corepack"
+$env:ANTHROPIC_API_KEY = ""
+corepack pnpm demo:breach
 ```
 
-## What Judges See
+What judges see:
 
-- `0:00`: PactNet banner, deployed contract addresses, and arbiter public key.
-- `0:05`: Agent A proposes a natural-language commitment. Claude parses it into structured fields.
-- `0:15`: Bond is locked onchain and the transaction hash plus explorer link are shown.
-- `0:30`: Agent A performs simulated work.
-- `0:33`: IPFS evidence is submitted.
-- `0:40`: Claude evaluates evidence and returns a fulfilled verdict.
-- `0:50`: Bond release and reputation update are shown.
-- After a 10-second pause: a second pact is created and allowed to miss its 35-second deadline.
-- Final section: fulfilled vs breached comparison table and a reputation card.
+- Agent A creates a real pact on Pharos.
+- The script waits past the deadline.
+- Agent A submits `TIMEOUT` evidence.
+- Deterministic Arbiter Mode returns a breached verdict.
+- `PactEngine` slashes the bond.
+- Final table shows `Breached`, confidence, and bond outcome.
+
+## Optional Stage Runner
+
+The scripted presentation runner is available:
+
+```powershell
+corepack pnpm --filter @pactnet/demo run demo:live
+```
+
+Run faster:
+
+```powershell
+$env:DEMO_SPEED = "2"
+corepack pnpm --filter @pactnet/demo run demo:live
+```
+
+The short `demo:happy` and `demo:breach` commands are recommended for judging because they are concise and use the real SDK flow directly.
+
+## Deployed Addresses
+
+- `PactEngine`: `0x8cB1a452A2fAC00F71110bc303453d416b521Cdb`
+- `ReputationNFT`: `0x19807b9CBe1E1e766BC10C6d101A746D2728430B`
+- `ArbiterRegistry`: `0xC71e59D7cCE0895D8eDa7c2F613F676F79b5952f`
+- Registered arbiter signer: `0x8534B350B98dc0D60c8a5102637675Fe3b020700`
 
 ## Troubleshooting
 
-If RPC is slow:
+If `pnpm` is not available:
 
-- Set `DEMO_SPEED=2` to shorten waits.
-- Keep a browser tab open to the Pharos explorer and paste the printed transaction hash.
-- The runner has stage-friendly fallbacks so terminal output can continue even if a live call stalls.
+```powershell
+$env:COREPACK_HOME = Join-Path (Get-Location) ".corepack"
+corepack pnpm --version
+```
+
+If port `3001` is already in use, the arbiter is probably already running. Do not start another copy; run the demo command in a new terminal.
+
+If the arbiter times out while settling, wait for the command to finish. The SDK uses longer settlement timeouts and recovers stored verdicts from `/arbiter/pact/:id` when possible.
 
 If a transaction fails:
 
 - Confirm `DEMO_AGENT_A_KEY` is funded.
-- Confirm `PACT_ENGINE_ADDRESS` points to the deployed Pharos testnet contract.
-- Confirm Agent B is not the same wallet as Agent A.
-- Confirm the pact bond is above the contract minimum.
+- Confirm `DEMO_AGENT_A_KEY` and `DEMO_AGENT_B_KEY` are different wallets.
+- Confirm `PACT_ENGINE_ADDRESS` is the deployed Pharos testnet contract.
+- Confirm the arbiter health endpoint reports `chainConnected: true`.
 
-If the arbiter times out:
+If deterministic mode is expected but Claude is mentioned in logs, confirm the shell has:
 
-- Confirm the arbiter service is running.
-- Check `NEXT_PUBLIC_ARBITER_URL` or `ARBITER_URL`.
-- Confirm `ANTHROPIC_API_KEY` and `ARBITER_PRIVATE_KEY` are set in the arbiter environment.
-- Re-run with `DEMO_SPEED=2` for the live presentation and inspect arbiter logs after the demo.
+```powershell
+$env:ANTHROPIC_API_KEY = ""
+```

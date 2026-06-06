@@ -5,9 +5,14 @@ export class AgentB {
 
   constructor(private readonly client: PactClient) {}
 
-  watchAndLog(pactId: string): () => void {
+  watchAndLog(
+    pactId: string,
+    onUpdate: (status: { pact: Pact; verdict: ArbiterVerdict | null }) => void = () => undefined
+  ): () => void {
     console.log(`[AgentB] Watching pact ${pactId}`);
     return this.client.watchPact(pactId, (pact: Pact, verdict: ArbiterVerdict | null) => {
+      onUpdate({ pact, verdict });
+
       if (pact.state !== this.lastState) {
         console.log(`[AgentB] Pact ${pactId} state changed: ${this.lastState ?? "unknown"} -> ${pact.state}`);
         this.lastState = pact.state;

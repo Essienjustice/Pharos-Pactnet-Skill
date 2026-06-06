@@ -16,6 +16,10 @@ type PactStatus = {
   verdict: ArbiterVerdict | null;
 };
 
+type RequestOptions = {
+  timeoutMs?: number;
+};
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class ArbiterClient {
@@ -29,10 +33,27 @@ export class ArbiterClient {
   }
 
   async submitEvidence(input: SubmitEvidenceInput): Promise<ArbiterVerdict> {
-    return this.request<ArbiterVerdict>("/arbiter/evaluate", {
-      method: "POST",
-      body: JSON.stringify(input)
-    });
+    try {
+      return await this.request<ArbiterVerdict>(
+        "/arbiter/evaluate",
+        {
+          method: "POST",
+          body: JSON.stringify(input)
+        },
+        { timeoutMs: 60_000 }
+      );
+    } catch (error) {
+      if (!(error instanceof ArbiterClientError) || (error.status !== null && error.status !== 409 && error.status !== 503)) {
+        throw error;
+      }
+
+      const recovered = await this.waitForSubmittedVerdict(input.pactId);
+      if (recovered) {
+        return recovered;
+      }
+
+      throw error;
+    }
   }
 
   async getPactStatus(pactId: string): Promise<PactStatus> {
@@ -41,10 +62,27 @@ export class ArbiterClient {
     });
   }
 
-  private async request<T>(path: string, init: RequestInit, attempt = 0): Promise<T> {
+  private async waitForSubmittedVerdict(pactId: string): Promise<ArbiterVerdict | null> {
+    for (let attempt = 1; attempt <= 6; attempt += 1) {
+      await sleep(1000 * attempt);
+      try {
+        const status = await this.getPactStatus(pactId);
+        if (status.verdict) {
+          return status.verdict;
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Arbiter verdict recovery attempt ${attempt} failed for pact ${pactId}: ${message}`);
+      }
+    }
+
+    return null;
+  }
+
+  private async request<T>(path: string, init: RequestInit, options: RequestOptions = {}, attempt = 0): Promise<T> {
     const endpoint = `${this.baseUrl.replace(/\/$/, "")}${path}`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
+    const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 10_000);
 
     try {
       const response = await fetch(endpoint, {
@@ -58,7 +96,7 @@ export class ArbiterClient {
 
       if (response.status === 503 && attempt < 2) {
         await sleep(1000);
-        return this.request<T>(path, init, attempt + 1);
+        return this.request<T>(path, init, options, attempt + 1);
       }
 
       if (!response.ok) {

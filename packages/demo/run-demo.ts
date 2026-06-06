@@ -26,6 +26,32 @@ const bondOutcome = (pact: Pact, verdict: ArbiterVerdict | null) => {
   return verdict.fulfilled ? "bond returned to AgentA" : "bond split to AgentB and treasury";
 };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getFinalStatus = async (
+  client: PactClient,
+  pactId: string,
+  fallback: { pact: Pact; verdict: ArbiterVerdict | null } | null
+): Promise<{ pact: Pact; verdict: ArbiterVerdict | null }> => {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await client.getPact(pactId);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      await sleep(1000 * attempt);
+    }
+  }
+
+  if (fallback) {
+    console.log(`[Demo] Final status fetch was slow; using last observed watcher state for pact ${pactId}`);
+    return fallback;
+  }
+
+  throw lastError ?? new Error(`Unable to fetch final status for pact ${pactId}`);
+};
+
 export async function runDemo(scenario: DemoScenario = "happy"): Promise<void> {
   const provider = new ethers.JsonRpcProvider(requireEnv("PHAROS_RPC_URL"));
   const agentAWallet = new ethers.Wallet(requireEnv("DEMO_AGENT_A_KEY"), provider);
@@ -37,9 +63,13 @@ export async function runDemo(scenario: DemoScenario = "happy"): Promise<void> {
   const agentBClient = new PactClient(provider, agentBWallet, engineAddress, arbiterUrl);
   const agentB = new AgentB(agentBClient);
   let cleanup: () => void = () => undefined;
+  let latestObservedStatus: { pact: Pact; verdict: ArbiterVerdict | null } | null = null;
   const agentA = new AgentA(agentAClient, agentBWallet.address, (pactId) => {
     cleanup();
-    cleanup = agentB.watchAndLog(pactId);
+    latestObservedStatus = null;
+    cleanup = agentB.watchAndLog(pactId, (status) => {
+      latestObservedStatus = status;
+    });
   });
 
   const stop = () => {
@@ -53,8 +83,8 @@ export async function runDemo(scenario: DemoScenario = "happy"): Promise<void> {
   const runPromise = scenario === "breach" ? agentA.runBreachPath() : agentA.runHappyPath();
   const pactId = await runPromise;
 
-  await new Promise((resolve) => setTimeout(resolve, 3500));
-  const finalStatus = await agentAClient.getPact(pactId);
+  await sleep(3500);
+  const finalStatus = await getFinalStatus(agentAClient, pactId, latestObservedStatus);
   cleanup();
   process.removeListener("SIGINT", stop);
 

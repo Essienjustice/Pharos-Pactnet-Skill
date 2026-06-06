@@ -6,6 +6,8 @@ import { ArbiterClient } from "./ArbiterClient.js";
 type PactEngine = ReturnType<typeof PactEngine__factory.connect>;
 type ContractRunner = Parameters<typeof PactEngine__factory.connect>[1];
 
+const terminalPactStates = new Set<string>(["Fulfilled", "Breached", "Disputed"]);
+
 export class PactClient {
   private readonly arbiterClient: ArbiterClient;
   private readonly engine: PactEngine;
@@ -90,6 +92,15 @@ export class PactClient {
   ): () => void {
     let lastSnapshot = "";
     let stopped = false;
+    let timer: ReturnType<typeof setInterval> | undefined;
+
+    const stop = () => {
+      stopped = true;
+      if (timer) {
+        clearInterval(timer);
+        timer = undefined;
+      }
+    };
 
     const poll = async () => {
       if (stopped) {
@@ -98,25 +109,34 @@ export class PactClient {
 
       try {
         const status = await this.getPact(pactId);
+        if (stopped) {
+          return;
+        }
+
         const snapshot = JSON.stringify(status);
         if (snapshot !== lastSnapshot) {
           lastSnapshot = snapshot;
           callback(status.pact, status.verdict);
         }
+
+        if (terminalPactStates.has(status.pact.state)) {
+          stop();
+        }
       } catch (error) {
+        if (stopped) {
+          return;
+        }
+
         console.error(`Failed to poll pact ${pactId}: ${error instanceof Error ? error.message : String(error)}`);
       }
     };
 
     void poll();
-    const timer = setInterval(() => {
+    timer = setInterval(() => {
       void poll();
     }, intervalMs);
 
-    return () => {
-      stopped = true;
-      clearInterval(timer);
-    };
+    return stop;
   }
 
   async getPact(pactId: string): Promise<{ pact: Pact; verdict: ArbiterVerdict | null }> {
