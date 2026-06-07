@@ -6,6 +6,8 @@ PactNet is an onchain commitment protocol for autonomous agents on Pharos. Agent
 
 The current deployed demo runs successfully without an Anthropic API key. When `ANTHROPIC_API_KEY` is missing, the arbiter automatically uses **Deterministic Arbiter Mode**. If an Anthropic key is provided, the existing Claude integration remains available.
 
+![PactNet Demo](docs/demo.png)
+
 ## Deployed Pharos Mainnet Contracts
 
 - `PactEngine`: `0x8cB1a452A2fAC00F71110bc303453d416b521Cdb`
@@ -178,8 +180,8 @@ http://localhost:3000
 
 Useful pages:
 
-- `/pact/1`
-- `/pact/2`
+- `/pact/17`
+- `/pact/18`
 - `/agent/<agent-address>`
 
 The UI displays **Deterministic Arbiter Mode** when the arbiter is running without an Anthropic API key.
@@ -237,16 +239,15 @@ The arbiter calls `claude-sonnet-4-20250514` for commitment parsing and evidence
 
 Recent successful live runs on Pharos:
 
-- Happy path pact `14`
+- Happy path pact `17`
   - State: `Fulfilled`
   - Confidence: `96`
-  - Create tx: `0xe1c5eccf27796c01157877af3f48fe4e4932c43d7c5ff7800d541ddaa31060dc`
+  - Bond outcome: Bond returned to AgentA
 
-- Earlier breach path pact `2`
+- Breach path pact `18`
   - State: `Breached`
   - Confidence: `96`
-  - Create tx: `0x653e1cbd4027a6a34a0734f7a7bdeccc305edde00d71e2316e7c2af943eb4d9a`
-  - Settle tx: `0x9f93c55f8e8c0da8a2e5298def5074d956e2e8e3330abafdf13b736925ea08a6`
+  - Bond outcome: Bond split to AgentB and treasury
 
 ## Troubleshooting
 
