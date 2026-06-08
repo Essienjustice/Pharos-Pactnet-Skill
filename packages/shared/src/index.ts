@@ -101,6 +101,19 @@ export const ReputationScoreSchema = z.object({
 
 export type ReputationScore = z.infer<typeof ReputationScoreSchema>;
 
+export const AgentTrustScoreSchema = z.object({
+  address: z.string(),
+  fulfilled: z.number().int().min(0),
+  breached: z.number().int().min(0),
+  disputed: z.number().int().min(0),
+  reliabilityPct: z.number().int().min(0).max(100),
+  totalBondHonored: z.string(),
+  totalBondSlashed: z.string(),
+  riskTier: z.enum(["LOW", "MEDIUM", "HIGH"])
+});
+
+export type AgentTrustScore = z.infer<typeof AgentTrustScoreSchema>;
+
 export const CreatePactSchema = z.object({
   agentB: z.string().min(1).optional(),
   counterparty: z.string().min(1).optional(),

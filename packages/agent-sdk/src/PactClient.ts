@@ -1,25 +1,43 @@
-import { PactEngine__factory } from "@pactnet/contracts/typechain-types";
-import type { ArbiterVerdict, CreatePactInput, EvidenceItem, Pact, ParsedCommitment } from "@pactnet/shared";
+import { PactEngine__factory, ReputationNFT__factory } from "@pactnet/contracts/typechain-types";
+import type { AgentTrustScore, ArbiterVerdict, CreatePactInput, EvidenceItem, Pact, ParsedCommitment } from "@pactnet/shared";
 import { ethers } from "ethers";
 import { ArbiterClient } from "./ArbiterClient.js";
 
 type PactEngine = ReturnType<typeof PactEngine__factory.connect>;
+type ReputationNFT = ReturnType<typeof ReputationNFT__factory.connect>;
 type ContractRunner = Parameters<typeof PactEngine__factory.connect>[1];
 
 const terminalPactStates = new Set<string>(["Fulfilled", "Breached", "Disputed"]);
 
+const getRiskTier = (reliabilityPct: number): AgentTrustScore["riskTier"] => {
+  if (reliabilityPct >= 90) {
+    return "LOW";
+  }
+
+  if (reliabilityPct >= 70) {
+    return "MEDIUM";
+  }
+
+  return "HIGH";
+};
+
 export class PactClient {
   private readonly arbiterClient: ArbiterClient;
   private readonly engine: PactEngine;
+  private readonly reputationNFT: ReputationNFT | null;
 
   constructor(
     private readonly provider: ethers.Provider,
     private readonly signer: ethers.Signer,
     engineAddress: string,
-    arbiterUrl: string
+    arbiterUrl: string,
+    reputationNftAddress?: string
   ) {
     this.arbiterClient = new ArbiterClient(arbiterUrl);
     this.engine = PactEngine__factory.connect(engineAddress, signer as unknown as ContractRunner);
+    this.reputationNFT = reputationNftAddress
+      ? ReputationNFT__factory.connect(reputationNftAddress, provider as unknown as ContractRunner)
+      : null;
   }
 
   async previewCommitment(text: string): Promise<ParsedCommitment> {
@@ -141,5 +159,29 @@ export class PactClient {
 
   async getPact(pactId: string): Promise<{ pact: Pact; verdict: ArbiterVerdict | null }> {
     return this.arbiterClient.getPactStatus(pactId);
+  }
+
+  async getAgentTrustScore(address: string): Promise<AgentTrustScore> {
+    if (!this.reputationNFT) {
+      throw new Error("getAgentTrustScore requires a ReputationNFT address in the PactClient constructor");
+    }
+
+    const score = await this.reputationNFT.getScore(address);
+    const fulfilled = Number(score.fulfilled);
+    const breached = Number(score.breached);
+    const disputed = Number(score.disputed);
+    const total = fulfilled + breached;
+    const reliabilityPct = total === 0 ? 0 : Math.round((fulfilled / total) * 100);
+
+    return {
+      address,
+      fulfilled,
+      breached,
+      disputed,
+      reliabilityPct,
+      totalBondHonored: score.totalBondHonored.toString(),
+      totalBondSlashed: score.totalBondSlashed.toString(),
+      riskTier: getRiskTier(reliabilityPct)
+    };
   }
 }

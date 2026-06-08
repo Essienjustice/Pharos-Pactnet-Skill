@@ -8,6 +8,66 @@ The current deployed demo runs successfully without an Anthropic API key. When `
 
 ![PactNet Demo](docs/demo.png)
 
+## PactNet as a Reusable Skill
+
+PactNet can be used as trust infrastructure for autonomous agents. External Pharos agents can call the SDK to create bond-backed commitments, submit evidence, read the arbiter outcome, and query portable reputation from the deployed `ReputationNFT`.
+
+The formal skill manifest is available at `skill/pactnet.skill.json`.
+
+```ts
+import { PactClient } from "@pactnet/agent-sdk";
+import { ethers } from "ethers";
+
+const provider = new ethers.JsonRpcProvider(process.env.PHAROS_RPC_URL);
+const signer = new ethers.Wallet(process.env.AGENT_PRIVATE_KEY!, provider);
+
+const pactnet = new PactClient(
+  provider,
+  signer,
+  process.env.PACT_ENGINE_ADDRESS!,
+  process.env.NEXT_PUBLIC_ARBITER_URL ?? "http://localhost:3001",
+  process.env.REPUTATION_NFT_ADDRESS!
+);
+
+const created = await pactnet.createPact({
+  agentB: process.env.COUNTERPARTY_AGENT_ADDRESS!,
+  commitmentText: "I commit to publishing an IPFS research summary within 2 hours, or I forfeit my bond.",
+  bondWei: ethers.parseEther("0.01").toString(),
+  deadlineSeconds: 2 * 60 * 60
+});
+
+const verdict = await pactnet.submitEvidence(created.pactId, [
+  {
+    type: "ipfs_content",
+    value: "ipfs://bafy_example_research_summary",
+    timestamp: Math.floor(Date.now() / 1000)
+  }
+]);
+
+const status = await pactnet.getPact(created.pactId);
+const trust = await pactnet.getAgentTrustScore(await signer.getAddress());
+
+console.log({
+  pactId: created.pactId,
+  fulfilled: verdict.fulfilled,
+  finalState: status.pact.state,
+  reliabilityPct: trust.reliabilityPct,
+  riskTier: trust.riskTier
+});
+```
+
+Short external-agent examples are included under `skill/examples/` for trading, research, and service agents.
+
+### Run Skill Examples
+
+These examples demonstrate how an external AI agent can integrate with PactNet as trust infrastructure.
+
+```bash
+corepack pnpm --filter @pactnet/demo run skill:trading
+corepack pnpm --filter @pactnet/demo run skill:research
+corepack pnpm --filter @pactnet/demo run skill:service
+```
+
 ## Deployed Pharos Mainnet Contracts
 
 - `PactEngine`: `0x8cB1a452A2fAC00F71110bc303453d416b521Cdb`

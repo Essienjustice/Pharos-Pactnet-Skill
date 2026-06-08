@@ -8,6 +8,9 @@
     "demo:live": "tsx demo-runner.ts",
     "demo:happy": "tsx scenarios/happy-path.ts",
     "demo:breach": "tsx scenarios/breach.ts",
+    "skill:trading": "tsx ../../skill/examples/trading-agent.ts",
+    "skill:research": "tsx ../../skill/examples/research-agent.ts",
+    "skill:service": "tsx ../../skill/examples/service-agent.ts",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --runInBand",
     "typecheck": "tsc -p tsconfig.json --noEmit"

@@ -1,0 +1,190 @@
+{
+  "name": "pactnet-trust-skill",
+  "displayName": "PactNet Trust Skill",
+  "version": "1.0.0",
+  "description": "Trust infrastructure for autonomous agents. PactNet lets Pharos agents create bond-backed commitments, submit evidence, receive arbiter verdicts, settle outcomes onchain, and read portable reputation.",
+  "network": {
+    "name": "Pharos Pacific Mainnet",
+    "chainId": 1672
+  },
+  "contracts": {
+    "pactEngine": "0x8cB1a452A2fAC00F71110bc303453d416b521Cdb",
+    "reputationNFT": "0x19807b9CBe1E1e766BC10C6d101A746D2728430B",
+    "arbiterRegistry": "0xC71e59D7cCE0895D8eDa7c2F613F676F79b5952f",
+    "arbiterSigner": "0x8534B350B98dc0D60c8a5102637675Fe3b020700"
+  },
+  "package": {
+    "name": "@pactnet/agent-sdk",
+    "client": "PactClient"
+  },
+  "actions": [
+    {
+      "name": "previewCommitment",
+      "sdkMethod": "PactClient.previewCommitment",
+      "description": "Parse natural-language commitment text into structured PactNet fields before creating an onchain pact.",
+      "input": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 20,
+            "description": "Natural-language commitment made by an agent."
+          }
+        }
+      },
+      "output": {
+        "type": "ParsedCommitment",
+        "fields": ["action", "successCondition", "evidenceTypes", "deadline", "bondAmountWei", "confidenceInParse", "arbiterMode"]
+      }
+    },
+    {
+      "name": "createCommitment",
+      "sdkMethod": "PactClient.createPact",
+      "description": "Create a bond-backed onchain pact between the calling agent and a counterparty.",
+      "input": {
+        "type": "CreatePactInput",
+        "required": ["agentB", "commitmentText", "bondWei"],
+        "properties": {
+          "agentB": {
+            "type": "string",
+            "description": "Counterparty wallet address."
+          },
+          "commitmentText": {
+            "type": "string",
+            "minLength": 20,
+            "description": "Natural-language commitment text."
+          },
+          "bondWei": {
+            "type": "string",
+            "description": "Bond amount in wei."
+          },
+          "deadlineSeconds": {
+            "type": "number",
+            "description": "Relative deadline in seconds."
+          },
+          "deadline": {
+            "type": "number",
+            "description": "Absolute unix timestamp deadline."
+          },
+          "commitmentURI": {
+            "type": "string",
+            "description": "Optional metadata URI stored as pact metadata bytes."
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "fields": ["pactId", "txHash", "parsedCommitment"]
+      }
+    },
+    {
+      "name": "submitEvidence",
+      "sdkMethod": "PactClient.submitEvidence",
+      "description": "Submit evidence to the arbiter. The arbiter returns a signed verdict and settles the pact when confidence meets the auto-settlement threshold.",
+      "input": {
+        "type": "object",
+        "required": ["pactId", "evidence"],
+        "properties": {
+          "pactId": {
+            "type": "string",
+            "description": "Onchain pact id."
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "EvidenceItem",
+              "fields": ["type", "content", "value", "metadata", "source", "timestamp"]
+            }
+          }
+        }
+      },
+      "output": {
+        "type": "ArbiterVerdict",
+        "fields": ["pactId", "fulfilled", "confidence", "reasoning", "evidenceSummary", "signature", "timestamp", "arbiterMode"]
+      }
+    },
+    {
+      "name": "getCommitmentStatus",
+      "sdkMethod": "PactClient.getPact",
+      "description": "Read pact state and any stored arbiter verdict.",
+      "input": {
+        "type": "object",
+        "required": ["pactId"],
+        "properties": {
+          "pactId": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "type": "object",
+        "fields": ["pact", "verdict"]
+      }
+    },
+    {
+      "name": "watchCommitment",
+      "sdkMethod": "PactClient.watchPact",
+      "description": "Poll pact status and notify an agent when state or verdict changes.",
+      "input": {
+        "type": "object",
+        "required": ["pactId", "callback"],
+        "properties": {
+          "pactId": {
+            "type": "string"
+          },
+          "intervalMs": {
+            "type": "number",
+            "default": 3000
+          }
+        }
+      },
+      "output": {
+        "type": "function",
+        "description": "Cleanup function that stops polling."
+      }
+    },
+    {
+      "name": "getAgentTrustScore",
+      "sdkMethod": "PactClient.getAgentTrustScore",
+      "description": "Read existing ReputationNFT counters and convert them into a reusable trust score for external agents.",
+      "input": {
+        "type": "object",
+        "required": ["address"],
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Agent wallet address."
+          }
+        }
+      },
+      "output": {
+        "type": "AgentTrustScore",
+        "fields": ["address", "fulfilled", "breached", "disputed", "reliabilityPct", "totalBondHonored", "totalBondSlashed", "riskTier"]
+      }
+    }
+  ],
+  "httpApi": {
+    "baseUrl": "http://localhost:3001",
+    "endpoints": [
+      {
+        "method": "POST",
+        "path": "/arbiter/parse",
+        "action": "previewCommitment"
+      },
+      {
+        "method": "POST",
+        "path": "/arbiter/evaluate",
+        "action": "submitEvidence"
+      },
+      {
+        "method": "GET",
+        "path": "/arbiter/pact/:id",
+        "action": "getCommitmentStatus"
+      }
+    ]
+  },
+  "exampleUsage": {
+    "typescript": "const client = new PactClient(provider, signer, PACT_ENGINE_ADDRESS, ARBITER_URL, REPUTATION_NFT_ADDRESS); const created = await client.createPact({ agentB, commitmentText, bondWei, deadlineSeconds: 3600 }); const verdict = await client.submitEvidence(created.pactId, evidence); const trust = await client.getAgentTrustScore(agentAddress);"
+  }
+}
