@@ -46,7 +46,7 @@ cd "C:\Users\USER\Desktop\5th Skill"
 $env:COREPACK_HOME = Join-Path (Get-Location) ".corepack"
 $env:ANTHROPIC_API_KEY = ""
 corepack pnpm --filter @pactnet/arbiter run build
-node packages/arbiter/dist/index.js
+corepack pnpm --filter @pactnet/arbiter run start
 ```
 
 Check health:
@@ -137,6 +137,12 @@ corepack pnpm --version
 ```
 
 If port `3001` is already in use, the arbiter is probably already running. Do not start another copy; run the demo command in a new terminal.
+
+If a demo reports that the arbiter is not reachable at `localhost`, keep the arbiter running and point the demo to IPv4 loopback:
+
+```powershell
+$env:NEXT_PUBLIC_ARBITER_URL = "http://127.0.0.1:3001"
+```
 
 If the arbiter times out while settling, wait for the command to finish. The SDK uses longer settlement timeouts and recovers stored verdicts from `/arbiter/pact/:id` when possible.
 

@@ -28,6 +28,61 @@ const bondOutcome = (pact: Pact, verdict: ArbiterVerdict | null) => {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+type HealthResponse = {
+  ok?: boolean;
+  chainConnected?: boolean;
+  latestBlock?: number;
+  arbiterMode?: string;
+};
+
+const readOptionalEnv = (...names: string[]): string | null => {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
+const getArbiterUrl = (): string => {
+  return readOptionalEnv("NEXT_PUBLIC_ARBITER_URL", "ARBITER_URL") ?? "http://127.0.0.1:3001";
+};
+
+const checkArbiterHealth = async (arbiterUrl: string): Promise<void> => {
+  const endpoint = `${arbiterUrl.replace(/\/$/, "")}/health`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(endpoint, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`health check returned ${response.status} ${response.statusText}`);
+    }
+
+    const health = (await response.json()) as HealthResponse;
+    if (!health.ok || !health.chainConnected) {
+      throw new Error(`health check was not ready: ${JSON.stringify(health)}`);
+    }
+
+    console.log(`[Demo] Arbiter ready at ${arbiterUrl} (latest block ${health.latestBlock ?? "unknown"})`);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      [
+        `Arbiter is not reachable at ${endpoint}: ${detail}`,
+        "Start the arbiter in another terminal before running the demo:",
+        "  corepack pnpm --filter @pactnet/arbiter run build",
+        "  corepack pnpm --filter @pactnet/arbiter run start",
+        "If localhost resolves incorrectly on Node 24, set NEXT_PUBLIC_ARBITER_URL=http://127.0.0.1:3001."
+      ].join("\n")
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const getFinalStatus = async (
   client: PactClient,
   pactId: string,
@@ -57,7 +112,9 @@ export async function runDemo(scenario: DemoScenario = "happy"): Promise<void> {
   const agentAWallet = new ethers.Wallet(requireEnv("DEMO_AGENT_A_KEY"), provider);
   const agentBWallet = new ethers.Wallet(requireEnv("DEMO_AGENT_B_KEY"), provider);
   const engineAddress = requireEnv("PACT_ENGINE_ADDRESS");
-  const arbiterUrl = process.env.NEXT_PUBLIC_ARBITER_URL ?? process.env.ARBITER_URL ?? "http://localhost:3001";
+  const arbiterUrl = getArbiterUrl();
+
+  await checkArbiterHealth(arbiterUrl);
 
   const agentAClient = new PactClient(provider, agentAWallet, engineAddress, arbiterUrl);
   const agentBClient = new PactClient(provider, agentBWallet, engineAddress, arbiterUrl);

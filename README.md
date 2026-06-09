@@ -181,7 +181,7 @@ Start the service:
 
 ```powershell
 $env:ANTHROPIC_API_KEY = ""
-node packages/arbiter/dist/index.js
+corepack pnpm --filter @pactnet/arbiter run start
 ```
 
 Health check:
@@ -319,6 +319,12 @@ corepack pnpm --version
 ```
 
 If the arbiter is already running, do not start a second copy on port `3001`; just run the demo command.
+
+If a demo reports that the arbiter is not reachable at `localhost`, keep the arbiter running and point the demo to IPv4 loopback:
+
+```powershell
+$env:NEXT_PUBLIC_ARBITER_URL = "http://127.0.0.1:3001"
+```
 
 If a transaction is slow, wait for the terminal to finish. The SDK uses longer settlement timeouts and recovers the final verdict from the arbiter status endpoint when possible.
 
